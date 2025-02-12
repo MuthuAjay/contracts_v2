@@ -52,7 +52,7 @@ def perform_contract_review(
         else:
             raise ValueError(f"Failed to set collection: {collection_name[:200]}")
         
-        content = vector_db.get_context(analysis_prompt)
+        content = vector_db.get_context(analysis_prompt, num_results=5)
 
         analysis_prompt = ContractAnalystTemplate.create_analysis_prompt(
             content, AnalysisScope.COMPREHENSIVE
@@ -64,7 +64,7 @@ def perform_contract_review(
 
         extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(initial_content)
 
-        content = vector_db.get_context(extarct_key_prompt)
+        content = vector_db.get_context(extarct_key_prompt, num_results=5)
 
         extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(content)
 
@@ -72,7 +72,7 @@ def perform_contract_review(
 
         analyze_obg_prompt = ContractAnalystTemplate.analyze_obligations(initial_content)
 
-        content = vector_db.get_context(analyze_obg_prompt)
+        content = vector_db.get_context(analyze_obg_prompt, num_results=5)
 
         analyze_obg_prompt = ContractAnalystTemplate.analyze_obligations(content)
 
@@ -82,7 +82,7 @@ def perform_contract_review(
             initial_content
         )
 
-        content = vector_db.get_context(party_extract_prompt)
+        content = vector_db.get_context(party_extract_prompt, num_results=5)
 
         party_extract_prompt = ContractAnalystTemplate.create_party_extraction_prompt(
             content
@@ -103,6 +103,34 @@ def perform_contract_review(
     except Exception as e:
         logger.error(f"Contract review failed: {str(e)}")
         return None
+    
+# def perform_contract_review(
+#     content: str, agent_manager: AgentManager, collection_name: str
+# ) -> Optional[Dict[str, Any]]:
+#     agent = agent_manager.create_agent(
+#         "contract_analyst", model_type=Config._current_model_type
+#     )
+
+#     if vector_db.set_active_collection(collection_name):
+#         logger.info(f"Collection set to: {collection_name}")
+#     else:
+#         raise ValueError(f"Failed to set collection: {collection_name[:200]}")
+    
+
+#     context_prompt = ContractAnalystTemplate.get_context_prompt()
+
+#     content = vector_db.get_context(context_prompt, num_results=7)
+
+#     context_prompt = ContractAnalystTemplate.create_analysis_prompt(
+#         content, AnalysisScope.COMPREHENSIVE
+#     )
+
+#     result = agent.run(context_prompt)
+
+#     return {
+#         "Contract Review": result.content,
+#     }
+
 
 def perform_legal_research(
     content: str, agent_manager: AgentManager

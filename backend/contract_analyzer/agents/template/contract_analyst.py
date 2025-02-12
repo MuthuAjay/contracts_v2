@@ -92,6 +92,22 @@ class ContractAnalystTemplate:
             ]
         )
     }
+
+    @classmethod
+    def get_context_prompt(cls) -> str:
+        """Get prompt for context extraction"""
+        return f"""Extract the context of the following contract:
+        Intellectual Property and Confidentiality
+        - IP ownership and rights
+        - License grants and restrictions
+        - Confidentiality obligations
+        - Rights, Obligations, and Deliverables
+        - Core obligations of each party
+        - Specific deliverables and requirements
+        - Termination clauses
+        - Governing law and Arbitration        
+        """
+
     @classmethod
     def create_analysis_prompt(cls, context: str, scope: AnalysisScope) -> str:
         """Create comprehensive analysis prompt based on scope"""
@@ -101,108 +117,7 @@ class ContractAnalystTemplate:
 
     {context}
 
-    Required Analysis Points:
-
-    1. Contract Overview and Structure
-    - Document type and purpose
-    - Governing law and jurisdiction
-    - Contract structure and organization
-    - Required sections: {', '.join(requirements.required_sections)}
-    - Optional sections: {', '.join(requirements.optional_sections)}
-    - Document completeness assessment
-
-    2. Parties and Relationships
-    - Identify all parties involved (entities, individuals, companies)
-    - Agreement Between (AB) and Agreement To (AT) relationships
-    - Role and responsibilities of each party
-    - Hierarchical relationships or dependencies
-    - Third-party beneficiaries or references
-    - Key stakeholders and decision makers
-
-    3. Financial Terms and Considerations
-    - Contract value and payment terms
-    - Pricing structures and mechanisms
-    - Currency and payment methods
-    - Payment schedules and milestones
-    - Financial obligations and guarantees
-    - Budget limitations or constraints
-    - Tax implications and responsibilities
-    - Financial reporting requirements
-
-    4. Timeline and Key Dates
-    - Effective date and term
-    - Execution and commencement dates
-    - Key milestones and deadlines
-    - Renewal or extension provisions
-    - Notice periods and timing requirements
-    - Termination dates or triggers
-    - Review and reporting schedules
-
-    5. Rights, Obligations, and Deliverables
-    - Core obligations of each party
-    - Specific deliverables and requirements
-    - Performance standards and metrics
-    - Quality requirements and specifications
-    - Service level agreements (SLAs)
-    - Acceptance criteria and procedures
-    - Reporting and documentation requirements
-
-    6. Risk Assessment and Compliance
-    - Legal and regulatory risks
-    - Operational and performance risks
-    - Financial and market risks
-    - Reputational risks
-    - Insurance requirements
-    - Compliance obligations
-    - Audit rights and requirements
-    - Data protection and privacy requirements
-
-    7. Liability and Indemnification
-    - Limitation of liability provisions
-    - Indemnification obligations
-    - Warranty terms and scope
-    - Force majeure provisions
-    - Disclaimers and exclusions
-    - Insurance requirements
-    - Remedy provisions
-
-    8. Intellectual Property and Confidentiality
-    - IP ownership and rights
-    - License grants and restrictions
-    - Confidentiality obligations
-    - Trade secret protection
-    - Data ownership and usage rights
-    - Technical specifications and requirements
-    - Non-disclosure provisions
-
-    9. Change and Termination Provisions
-    - Amendment procedures
-    - Change control processes
-    - Termination rights and triggers
-    - Early termination provisions
-    - Termination consequences
-    - Post-termination obligations
-    - Wind-down procedures
-    - Survival clauses
-
-    10. Dispute Resolution
-        - Resolution procedures
-        - Governing law and jurisdiction
-        - Arbitration or mediation requirements
-        - Notice requirements
-        - Escalation procedures
-        - Venue and forum selection
-        - Choice of law provisions
-
-    11. Negotiation Points and Recommendations
-        - Key negotiation leverage points
-        - Areas requiring clarification
-        - Suggested improvements
-        - Risk mitigation recommendations
-        - Alternative language suggestions
-        - Strategic considerations
-        - Fallback positions
-
+   
     Please provide:
     - Detailed analysis of each section with specific clause references
     - Exact quotes of critical language
