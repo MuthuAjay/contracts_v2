@@ -34,30 +34,55 @@ vector_db = VectorDB()
 
 
 def perform_contract_review(
-    content: str, agent_manager: AgentManager
+    content: str, agent_manager: AgentManager, collection_name: str
 ) -> Optional[Dict[str, Any]]:
     try:
         agent = agent_manager.create_agent(
             "contract_analyst", model_type=Config._current_model_type
         )
-        
+        initial_content = ''
         analysis_prompt = ContractAnalystTemplate.create_analysis_prompt(
-            content, AnalysisScope.COMPREHENSIVE
+            initial_content, AnalysisScope.COMPREHENSIVE
         )
         
         # logger.info(f"Contract Review Prompt: {analysis_prompt}")
+
+        if vector_db.set_active_collection(collection_name):
+            logger.info(f"Collection set to: {collection_name}")
+        else:
+            raise ValueError(f"Failed to set collection: {collection_name[:200]}")
+        
+        content = vector_db.get_context(analysis_prompt)
+
+        analysis_prompt = ContractAnalystTemplate.create_analysis_prompt(
+            content, AnalysisScope.COMPREHENSIVE
+        )
         
         result = agent.run(analysis_prompt)
         
         # logger.info(f"Contract Review Result: {result.content}")
 
+        extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(initial_content)
+
+        content = vector_db.get_context(extarct_key_prompt)
+
         extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(content)
 
         key_terms = agent.run(extarct_key_prompt)
 
+        analyze_obg_prompt = ContractAnalystTemplate.analyze_obligations(initial_content)
+
+        content = vector_db.get_context(analyze_obg_prompt)
+
         analyze_obg_prompt = ContractAnalystTemplate.analyze_obligations(content)
 
         obligations = agent.run(analyze_obg_prompt)
+
+        party_extract_prompt = ContractAnalystTemplate.create_party_extraction_prompt(
+            initial_content
+        )
+
+        content = vector_db.get_context(party_extract_prompt)
 
         party_extract_prompt = ContractAnalystTemplate.create_party_extraction_prompt(
             content
@@ -294,13 +319,13 @@ def perform_analysis(
                 raise ValueError("Collection name required for Information Extraction")
             result = perform_information_extraction(content, agent_manager, collection_name)
         elif analysis_type == "Contract Review":
-            result = perform_contract_review(content, agent_manager)
+            result = perform_contract_review(content, agent_manager, collection_name)
         elif analysis_type == "Legal Research":
-            result = perform_legal_research(content, agent_manager)
+            result = perform_legal_research(content, agent_manager, collection_name)
         elif analysis_type == "Risk Assessment":
-            result = perform_risk_assessment(content, agent_manager)
+            result = perform_risk_assessment(content, agent_manager, collection_name)
         elif analysis_type == "Contract Summary":
-            result = perform_contract_summary(content, agent_manager)
+            result = perform_contract_summary(content, agent_manager, collection_name)
         elif analysis_type == "Custom Analysis":
             result = perform_custom_analysis(content, custom_query, agent_manager, collection_name)
         else:
