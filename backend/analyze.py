@@ -242,11 +242,13 @@ def perform_information_extraction(content: str, agent_manager: AgentManager, co
         processor = ExtractionProcessor()
         
         vector_db.set_active_collection(collection_name)
+
+        print("Collection set to: ", collection_name)
         
         # Process extractions
         processor.process_extractions(
             vec=vector_db,
-            chat=agent
+            agent=agent,
         )
         
         # Get results in proper format
