@@ -34,7 +34,7 @@ class PDFProcessor(BaseProcessor):
         return PaddleOCR(
             use_angle_cls=True,
             lang=self.config.get("language", "en"),
-            use_gpu= False,
+            use_gpu= True,
             enable_mkldnn=True,
             show_log=False,
         )
@@ -68,7 +68,7 @@ class PDFProcessor(BaseProcessor):
             
             # self._save_content({"content": pages_content}, self.save_processed_files_dir, file_path.stem)
             
-            with open(f"/home/eyhyd/Contracts_V1/server/python/processed_files/ext.txt", "w") as f:
+            with open(f"/home/ajay/contracts_v2/ext.txt", "w") as f:
                 for page in pages_content:
                     f.write(page["text"])
                     f.write("\n\n")
