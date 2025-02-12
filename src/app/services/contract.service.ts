@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { NgIf } from '@angular/common';
 
 export interface UploadResponse {
   content: string;
@@ -32,7 +31,7 @@ export interface AnalysisResult {
   providedIn: 'root'
 })
 export class ContractService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = 'http://localhost:8000/api';  // Updated to match backend host
 
   constructor(private http: HttpClient) {}
 
@@ -68,15 +67,15 @@ export class ContractService {
 
   analyzeDocument(
     content: string,
-    analysisType: string,
-    collectionName?: string,
-    customQuery?: string
+    type: string,
+    collection_name?: string,
+    custom_query?: string
   ): Observable<AnalysisResult> {
     const request: AnalysisRequest = {
       content,
-      type: analysisType,
-      collection_name: collectionName,
-      custom_query: customQuery
+      type,
+      collection_name,
+      custom_query
     };
 
     return this.http.post<AnalysisResult>(

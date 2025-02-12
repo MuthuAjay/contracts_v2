@@ -219,7 +219,7 @@ export class AnalysisFormComponent {
 
     this.contractService.analyzeDocument(
       this.documentContent,
-      analysisType.id,
+      analysisType.id, // Use the id instead of label
       this.collectionName,
       this.customQuery || undefined
     ).subscribe({

@@ -1,6 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import json
@@ -10,15 +10,19 @@ from process_document import process_document as process_func
 
 app = FastAPI()
 
-# Configure CORS - Updated settings
+# Configure CORS
+origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
-    allow_credentials=False,  # Changed to False since we don't need credentials
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=3600,  # Cache preflight requests for 1 hour
+    expose_headers=["*"]
 )
 
 # Request/Response Models
@@ -85,11 +89,16 @@ async def upload_file(file: UploadFile = File(...)):
         # Process document
         content, collection_name = process_func(temp_path)
         
-        # Return response
-        return AnalysisResponse(
-            content=content,
-            collection_name=collection_name
-        )
+        if not content or not collection_name:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to process document"
+            )
+        
+        return {
+            "content": content,
+            "collection_name": collection_name
+        }
         
     except HTTPException as he:
         raise he
@@ -99,24 +108,43 @@ async def upload_file(file: UploadFile = File(...)):
             detail=f"Document processing failed: {str(e)}"
         )
     finally:
-        # Clean up temporary file
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
 
 @app.post("/api/analyze")
 async def analyze_document(request: AnalysisRequest) -> Dict[str, Any]:
     try:
-        # Convert request to dictionary for the analysis function
-        analysis_params = {
-            "content": request.content,
-            "type": request.type,
-            "collection_name": request.collection_name,
-            "query": request.custom_query
+        # Convert frontend analysis type to backend format
+        analysis_type_mapping = {
+            'contract_review': 'Contract Review',
+            'information_extraction': 'Information Extraction',
+            'legal_research': 'Legal Research',
+            'risk_assessment': 'Risk Assessment',
+            'contract_summary': 'Contract Summary',
+            'custom_analysis': 'Custom Analysis'
         }
         
-        # Perform analysis
-        result = analyze_func(**analysis_params)
+        analysis_type = analysis_type_mapping.get(request.type)
+        if not analysis_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid analysis type: {request.type}"
+            )
         
+        # Perform analysis
+        result = analyze_func(
+            content=request.content,
+            analysis_type=analysis_type,
+            collection_name=request.collection_name,
+            custom_query=request.custom_query
+        )
+        
+        if not result:
+            raise HTTPException(
+                status_code=500,
+                detail="Analysis failed to produce results"
+            )
+            
         return result
         
     except Exception as e:
