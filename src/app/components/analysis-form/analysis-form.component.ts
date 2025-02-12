@@ -219,15 +219,17 @@ export class AnalysisFormComponent {
 
     this.contractService.analyzeDocument(
       this.documentContent,
-      analysisType.id, // Use the id instead of label
+      analysisType.id,
       this.collectionName,
       this.customQuery || undefined
     ).subscribe({
       next: (result) => {
-        if (result.error) {
-          this.handleError(result.error);
+        if (result.error || result.status === 'failed') {
+          this.handleError(result.error || 'Analysis failed');
         } else {
-          this.analysisCompleted.emit(result);
+          // Create a new object without the status field
+          const { status, ...resultWithoutStatus } = result;
+          this.analysisCompleted.emit(resultWithoutStatus);
         }
       },
       error: (error) => {

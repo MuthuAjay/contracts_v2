@@ -105,22 +105,26 @@ export class App {
   results?: any;
 
   onDocumentProcessed(event: {content: string, collectionName: string}) {
+    console.log('Document processed:', event);
     this.documentContent = event.content;
     this.collectionName = event.collectionName;
   }
 
   onAnalysisStarted() {
+    console.log('Analysis started');
     this.analyzing = true;
     this.error = undefined;
     this.results = undefined;
   }
 
   onAnalysisCompleted(results: any) {
+    console.log('Analysis completed:', results);
     this.analyzing = false;
     this.results = results;
   }
 
   onAnalysisError(error: string) {
+    console.error('Analysis error:', error);
     this.analyzing = false;
     this.error = error;
     this.results = undefined;

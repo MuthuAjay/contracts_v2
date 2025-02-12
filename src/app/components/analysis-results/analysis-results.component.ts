@@ -25,7 +25,7 @@ import 'prismjs/themes/prism.css';
           <h3>Error</h3>
           <p>{{ error }}</p>
         </div>
-      } @else if (results) {
+      } @else if (formattedResults) {
         <div class="results">
           <h3>Analysis Results</h3>
           <div class="markdown-content" [innerHTML]="formattedResults"></div>
@@ -110,23 +110,19 @@ export class AnalysisResultsComponent {
   formattedResults?: SafeHtml;
 
   constructor(private sanitizer: DomSanitizer) {
-    // Configure marked with custom renderer
     const renderer = new marked.Renderer();
     
     renderer.code = (code, language) => {
       const validLanguage = language && Prism.languages[language] ? language : 'javascript';
-      
-      return `<pre><code class="language-${validLanguage}">${
-        Prism.highlight(
-          code,
-          Prism.languages[validLanguage as keyof typeof Prism.languages] || 
-            Prism.languages['javascript'],
-          validLanguage
-        )
-      }</code></pre>`;
+      const highlightedCode = Prism.highlight(
+        code,
+        Prism.languages[validLanguage as keyof typeof Prism.languages] || 
+          Prism.languages['javascript'],
+        validLanguage
+      );
+      return `<pre><code class="language-${validLanguage}">${highlightedCode}</code></pre>`;
     };
 
-    // Apply the configuration
     marked.setOptions({
       renderer: renderer,
       gfm: true,
@@ -139,65 +135,73 @@ export class AnalysisResultsComponent {
 
   private async formatResults() {
     try {
+      let markdown = '';
+      
+      // Handle different result formats
       if (typeof this.results === 'string') {
-        const html = await Promise.resolve(marked(this.results));
-        this.formattedResults = this.sanitizer.bypassSecurityTrustHtml(html);
-      } else {
-        const markdown = this.convertToMarkdown(this.results);
-        const html = await Promise.resolve(marked(markdown));
-        this.formattedResults = this.sanitizer.bypassSecurityTrustHtml(html);
+        markdown = this.results;
+      } else if (typeof this.results === 'object') {
+        // Extract the main analysis type and result
+        const analysisType = Object.keys(this.results)[0];
+        const analysisContent = this.results[analysisType];
+
+        if (typeof analysisContent === 'string') {
+          markdown = `# ${analysisType}\n\n${analysisContent}`;
+        } else if (typeof analysisContent === 'object') {
+          // Handle nested results
+          markdown = `# ${analysisType}\n\n`;
+          
+          // Handle Information Extraction special case
+          if (analysisType === 'Information Extraction' && analysisContent.results) {
+            markdown += this.formatExtractionResults(analysisContent.results);
+          } else {
+            // Handle other nested results
+            Object.entries(analysisContent).forEach(([key, value]) => {
+              if (typeof value === 'string') {
+                markdown += `## ${key}\n\n${value}\n\n`;
+              }
+            });
+          }
+        }
       }
+
+      const html = await Promise.resolve(marked(markdown));
+      this.formattedResults = this.sanitizer.bypassSecurityTrustHtml(html);
+      
     } catch (error) {
       console.error('Error formatting results:', error);
-      this.formattedResults = this.sanitizer.bypassSecurityTrustHtml(
-        'Error formatting results. Please check the console for details.'
-      );
+      this.error = 'Error formatting results. Please check the console for details.';
     }
   }
 
-  private convertToMarkdown(obj: any): string {
-    if (typeof obj === 'string') {
-      return obj;
-    }
-
+  private formatExtractionResults(results: any): string {
     let markdown = '';
     
-    if (obj.result) {
-      markdown += this.convertToMarkdown(obj.result);
-    }
-
-    if (obj.analysis) {
-      markdown += '## Analysis\n\n';
-      markdown += obj.analysis + '\n\n';
-    }
-
-    if (obj.summary) {
-      markdown += '## Summary\n\n';
-      markdown += obj.summary + '\n\n';
-    }
-
-    if (obj.details) {
-      markdown += '## Details\n\n';
-      if (Array.isArray(obj.details)) {
-        obj.details.forEach((detail: any) => {
-          markdown += '- ' + detail + '\n';
+    Object.entries(results || {}).forEach(([category, items]) => {
+      markdown += `## ${this.formatTitle(category)}\n\n`;
+      
+      if (Array.isArray(items)) {
+        items.forEach((item: any) => {
+          markdown += `- ${item}\n`;
+        });
+      } else if (items && typeof items === 'object') {
+        Object.entries(items || {}).forEach(([key, value]) => {
+          markdown += `### ${this.formatTitle(key)}\n${value}\n\n`;
         });
       } else {
-        markdown += obj.details + '\n\n';
+        markdown += `${items}\n`;
       }
-    }
-
-    if (obj.recommendations) {
-      markdown += '## Recommendations\n\n';
-      if (Array.isArray(obj.recommendations)) {
-        obj.recommendations.forEach((rec: any) => {
-          markdown += '- ' + rec + '\n';
-        });
-      } else {
-        markdown += obj.recommendations + '\n\n';
-      }
-    }
-
+      
+      markdown += '\n';
+    });
+    
     return markdown;
+  }
+
+  private formatTitle(text: string): string {
+    return text
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 }
