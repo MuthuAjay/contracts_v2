@@ -358,11 +358,14 @@ class ExtractionProcessor:
             columns=['Term', 'Terms']
         )
 
-    def process_extractions(self, vec, agent) -> None:
+    def process_extractions(self,content, vec, agent) -> None:
         """Process all extractions"""
         df = self.create_df()
         for _, row in tqdm(df.iterrows(), desc="Extracting Information"):
-            context = vec.get_context(self._build_search_prompt(row))
+            if len(content) > 20000:
+                context = vec.get_context(self._build_search_prompt(row))
+            else:
+                context = content
             response = agent.run(self._build_extraction_prompt(context, row))
             self._store_result(row['Term'], response, context)
 

@@ -300,6 +300,7 @@ def perform_information_extraction(content: str, agent_manager: AgentManager, co
         
         # Process extractions
         processor.process_extractions(
+            content=content,
             vec=vector_db,
             agent=agent,
         )
