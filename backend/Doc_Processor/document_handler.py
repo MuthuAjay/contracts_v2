@@ -23,7 +23,11 @@ class DocumentHandler:
         'text/markdown': StructuredProcessor,
         'text/x-markdown': StructuredProcessor,
         'text/plain': StructuredProcessor,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': StructuredProcessor,  # .docx
+        'application/msword': StructuredProcessor,  # .doc
     }
+
+
     
     def __init__(
         self,
@@ -51,7 +55,11 @@ class DocumentHandler:
             mime_type = self._get_mime_type(path)
             mime_type = mime_type.strip()
 
+            print("Mime Type ", mime_type)
+
             processor_class = self.MIME_TYPE_MAPPING.get(mime_type)
+
+            print("processor_class ", processor_class)
             
             if not processor_class:
                 raise ValueError(f"Unsupported document type: {mime_type}")
@@ -90,6 +98,7 @@ class DocumentHandler:
             'application/json': 'structured',
             'text/xml': 'structured',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'structured',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'structured',
             'text/markdown': 'structured',
             'text/x-markdown': 'structured',
             'text/plain': 'structured'

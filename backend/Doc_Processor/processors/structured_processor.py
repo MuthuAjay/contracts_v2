@@ -5,6 +5,7 @@ import xmltodict
 import pandas as pd
 import markdown
 from .base_processor import BaseProcessor
+from docx import Document
 
 class StructuredProcessor(BaseProcessor):
     SUPPORTED_FORMATS = {
@@ -13,7 +14,8 @@ class StructuredProcessor(BaseProcessor):
         '.xlsx': 'excel',
         '.xls': 'excel',
         '.md': 'markdown',
-        '.txt': 'text'
+        '.txt': 'text',
+        '.docx': 'docx',
     }
     
     def _validate_config(self) -> None:
@@ -34,6 +36,22 @@ class StructuredProcessor(BaseProcessor):
         except Exception as e:
             self._log_processing_status(f"Error: {str(e)}", file_path)
             raise
+
+    def _process_docx(self, file_path: Path) -> Dict[str, Any]:
+        """Process DOCX files."""
+        doc = Document(file_path)
+        paragraphs = [para.text for para in doc.paragraphs if para.text.strip()]
+        word_count = sum(len(para.split()) for para in paragraphs)
+        
+        return {
+            'content': '\n'.join(paragraphs),
+            'metadata': {
+                'format': 'docx',
+                'size': file_path.stat().st_size,
+                'paragraphs': len(paragraphs),
+                'word_count': word_count
+            }
+        }
 
     def _process_markdown(self, file_path: Path) -> Dict[str, Any]:
         """Process Markdown files."""
