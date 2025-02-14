@@ -12,6 +12,7 @@ node_modules
 *.jpg
 server/uploads
 .venv
+venv
 .env
 backend/chroma_db/chroma.sqlite3
 backend/__pycache__/main.cpython-310.pyc
