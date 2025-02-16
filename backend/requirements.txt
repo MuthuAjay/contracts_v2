@@ -20,4 +20,3 @@ tiktoken
 nltk
 xmltodict
 markdown
-torch
