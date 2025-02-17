@@ -7,229 +7,13 @@ from functools import lru_cache
 import os
 import re
 from chromadb.utils import embedding_functions
-from .config import Config
+from backend.contract_analyzer.config import Config
+from backend.Doc_Processor.processors.text_pre_processor import process_agreement
 
 logger = logging.getLogger(__name__)
 
 import re
 
-def extract_sections_to_dict(text):
-    """
-    Extracts sections from text and creates a dictionary with hierarchical structure
-    including sections, subsections, and lettered points. Handles multiple sections
-    with same numbers and saves introduction.
-    """
-    # Save introduction (first 1000-5000 characters)
-    introduction = text[:min(len(text), 5000)]
-    
-    # Pattern to match main sections with name possibly on next line
-    main_section_pattern = r'^\s*(\d+)\.\s*\n*([A-Z][A-Z\s\'\-]+)(?:\n|$)'
-    
-    # Pattern to match lettered sections
-    letter_section_pattern = r'^\s*([A-Z])\s*\n*([A-Z][A-Z\s\'\-]+)(?:\n|$)'
-    
-    # Pattern to match sections without letters (like SCOPE OF WORK)
-    regular_section_pattern = r'^([A-Z][A-Z\s\'\-]+)(?:\n|$)'
-    
-    # Pattern to match subsections
-    subsection_pattern = r'^\s*(\d+\.\d+)\s*$'
-    
-    # Pattern to match lettered points
-    letter_pattern = r'^\s*\(([a-z])\)\s*$'
-    
-    # Pattern for special sections
-    whereas_pattern = r'^WHEREAS\s'
-    signatories_pattern = r'^SIGNATORIES\s*$'
-    
-    sections = {
-        'introduction': introduction,
-        'sections': {}
-    }
-    current_section = None
-    current_section_name = None
-    current_subsection = None
-    current_letter = None
-    current_content = []
-    
-    lines = text.split('\n')
-    i = 0
-    
-    while i < len(lines):
-        current_line = lines[i].strip()
-        next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
-        combined_lines = f"{current_line}\n{next_line}"
-        
-        # Check for WHEREAS section
-        whereas_match = re.match(whereas_pattern, current_line)
-        if whereas_match:
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            current_section = 'whereas'
-            current_section_name = 'WHEREAS'
-            sections['sections'][current_section] = {
-                'name': current_section_name,
-                'content': '',
-                'subsections': {}
-            }
-            current_content = [current_line]
-            i += 1
-            continue
-            
-        # Check for SIGNATORIES section
-        sig_match = re.match(signatories_pattern, current_line)
-        if sig_match:
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            current_section = 'signatories'
-            current_section_name = 'SIGNATORIES'
-            sections['sections'][current_section] = {
-                'name': current_section_name,
-                'content': '',
-                'subsections': {}
-            }
-            current_content = []
-            i += 1
-            continue
-        
-        # Check for regular sections without letters
-        regular_match = re.match(regular_section_pattern, current_line)
-        if regular_match:
-            section_name = regular_match.group(1).strip()
-            # Skip if it's likely a false positive or part of another section
-            if (len(section_name) < 3 or 
-                section_name in ['CEO', 'CFO'] or 
-                current_line.startswith('Email:') or
-                current_line.startswith('Address:')):
-                current_content.append(current_line)
-                i += 1
-                continue
-                
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            
-            section_key = section_name.lower().replace(' ', '_')
-            if section_key not in sections['sections']:
-                sections['sections'][section_key] = {
-                    'name': section_name,
-                    'content': '',
-                    'subsections': {}
-                }
-            current_section = section_key
-            current_section_name = section_name
-            current_subsection = None
-            current_letter = None
-            current_content = []
-            i += 1
-            continue
-            
-        # Check for lettered sections (like A, B, C)
-        letter_match = re.match(letter_section_pattern, combined_lines)
-        if letter_match:
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            
-            section_letter = letter_match.group(1)
-            section_name = letter_match.group(2).strip()
-            section_key = f"{section_letter}_{section_name.lower().replace(' ', '_')}"
-            
-            if section_key not in sections['sections']:
-                sections['sections'][section_key] = {
-                    'letter': section_letter,
-                    'name': section_name,
-                    'content': '',
-                    'subsections': {}
-                }
-            current_section = section_key
-            current_section_name = section_name
-            current_subsection = None
-            current_letter = None
-            current_content = []
-            i += 2
-            continue
-        
-        # Check for subsection
-        subsection_match = re.match(subsection_pattern, current_line)
-        if subsection_match:
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            
-            current_subsection = subsection_match.group(1)
-            if current_section and current_subsection:
-                if 'subsections' not in sections['sections'][current_section]:
-                    sections['sections'][current_section]['subsections'] = {}
-                if current_subsection not in sections['sections'][current_section]['subsections']:
-                    sections['sections'][current_section]['subsections'][current_subsection] = {
-                        'content': '',
-                        'letters': {}
-                    }
-            current_letter = None
-            current_content = []
-            i += 1
-            continue
-        
-        # Check for lettered points
-        point_match = re.match(letter_pattern, current_line)
-        if point_match:
-            if current_content:
-                _save_current_content(sections['sections'], current_section,
-                                   current_section_name, current_subsection,
-                                   current_letter, current_content)
-            
-            current_letter = point_match.group(1)
-            current_content = []
-            i += 1
-            continue
-        
-        if current_line:
-            current_content.append(current_line)
-        i += 1
-    
-    # Save final content
-    if current_content:
-        _save_current_content(sections['sections'], current_section,
-                           current_section_name, current_subsection,
-                           current_letter, current_content)
-    
-    return sections
-
-def _save_current_content(sections, section, section_name, subsection, letter, content):
-    """Helper function to save content at appropriate level"""
-    if not section or not sections:
-        return
-    
-    content_text = ' '.join(content).strip()
-    if not content_text:
-        return
-        
-    if subsection:
-        if letter:
-            if letter not in sections[section]['subsections'][subsection]['letters']:
-                sections[section]['subsections'][subsection]['letters'][letter] = ''
-            sections[section]['subsections'][subsection]['letters'][letter] = content_text
-        else:
-            sections[section]['subsections'][subsection]['content'] = content_text
-    else:
-        sections[section]['content'] = content_text
-
-def process_file(text: str):
-    """Processes input file and returns structured dictionary with sections"""
-    try:
-        sections = extract_sections_to_dict(text)
-        return sections
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return None
-    
     
 class VectorDB:
     """Core vector database operations"""
@@ -327,74 +111,6 @@ class VectorDB:
             self.logger.error(f"Failed to set active collection: {str(e)}")
             return False
 
-    def prepare_documents(self, sections: Dict) -> List[Dict]:
-        """
-        Creates documents with complete sections including all subsections and letters.
-        Handles both lettered and non-lettered sections.
-        """
-        documents = []
-        
-        # First handle the introduction if present
-        if 'introduction' in sections:
-            documents.append({
-                'id': 'introduction',
-                'text': sections['introduction'],
-                'metadata': {
-                    'name': 'Introduction'
-                }
-            })
-        
-        # Process all sections
-        for section_key, section_data in sections.get('sections', {}).items():
-            full_text = []
-            
-            # Handle different section types
-            if section_key in ['whereas', 'signatories']:
-                # Special sections
-                full_text.append(section_data['name'])
-                if section_data.get('content'):
-                    full_text.append(section_data['content'])
-            else:
-                # Regular or lettered sections
-                section_header = section_data['name']
-                if 'letter' in section_data:
-                    section_header = f"{section_data['letter']}. {section_header}"
-                full_text.append(section_header)
-                
-                # Add main content if exists
-                if section_data.get('content'):
-                    full_text.append(section_data['content'])
-                
-                # Add subsections if they exist
-                for subsec_num, subsec_data in section_data.get('subsections', {}).items():
-                    full_text.append(f"\nSubsection {subsec_num}:")
-                    if subsec_data.get('content'):
-                        full_text.append(subsec_data['content'])
-                    
-                    # Add lettered points if they exist
-                    for letter, content in subsec_data.get('letters', {}).items():
-                        if content:
-                            full_text.append(f"\n({letter}) {content}")
-            
-            # Create metadata
-            metadata = {
-                'name': section_data['name']
-            }
-            
-            # Add letter to metadata if it exists
-            if 'letter' in section_data:
-                metadata['letter'] = section_data['letter']
-            
-            # Generate document ID
-            doc_id = section_key.lower().replace(' ', '_')
-            
-            documents.append({
-                'id': doc_id,
-                'text': '\n'.join(full_text),
-                'metadata': metadata
-            })
-        
-        return documents
     
     def add_documents(
         self, 
@@ -418,29 +134,21 @@ class VectorDB:
         try:
             # creating documents
             
-            docs = process_file(texts)
+            docs = process_agreement(texts)
+        
+            # create ids
             
-            print("********Documents processed")
             
-            documents = self.prepare_documents(docs)
+            print(f"********Adding {len(docs)} documents to collection")
             
-            print("********Documents prepared")
-            
-            ids = [doc['id'] for doc in documents]
-            texts = [doc['text'] for doc in documents]
-            metadatas = [doc['metadata'] for doc in documents]
-            
-            self.logger.info(f"Adding {len(documents)} documents to collection")
-            
-            print(f"********Adding {len(documents)} documents to collection")
+            documents = ["content: " + key + " \n " + str(value) for key, value in docs.items()]
             # adding documents to collection
             self.active_collection.add(
-                ids=ids,
-                documents=texts,
-                metadatas=metadatas,
+                ids = list[docs.keys()],
+                documents=documents,
             )
             
-            self.logger.info(f"Added {len(documents)} documents to collection")
+            self.logger.info(f"Added {len(docs)} documents to collection")
             
             print("********Documents added")
             
