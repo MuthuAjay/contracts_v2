@@ -25,12 +25,27 @@ import 'prismjs/themes/prism.css';
           <h3>Error</h3>
           <p>{{ error }}</p>
         </div>
-      } @else if (formattedResults) {
+      } @else if (formattedResults && information_extraction_value == false) {
         <div class="results">
           <h3>Analysis Results</h3>
           <div class="markdown-content" [innerHTML]="formattedResults"></div>
         </div>
-      }
+      } @else if (information_extraction_value == true) {
+  <h3>Analysis Results</h3>
+  <table width="100%" border="1">
+  <tr>
+    <th>term</th>
+    <th>extracted_value</th>
+    <th>timestamp</th>
+  </tr>
+  <tr *ngFor="let item of information_extraction">
+    <td>{{item.term}}</td>
+    <td>{{item.extracted_value}}</td>
+    <td>{{item.timestamp}}</td>
+  </tr>
+ 
+</table>
+}
     </div>
   `,
   styles: [`
@@ -93,10 +108,24 @@ import 'prismjs/themes/prism.css';
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
       font-size: 0.9em;
     }
+      table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #DDD;
+}
+
+tr:hover {background-color: #D6EEEE;}
   `]
 })
 export class AnalysisResultsComponent {
   @Input() loading = false;
+  information_extraction:any
+  information_extraction_value = false
   @Input() error?: string;
   @Input() set results(value: any) {
     if (value) {
@@ -153,6 +182,8 @@ export class AnalysisResultsComponent {
           
           // Handle Information Extraction special case
           if (analysisType === 'Information Extraction' && analysisContent.results) {
+
+            this.information_extraction_value = true
             markdown += this.formatExtractionResults(analysisContent.results);
           } else {
             // Handle other nested results
@@ -175,6 +206,8 @@ export class AnalysisResultsComponent {
   }
 
   private formatExtractionResults(results: any): string {
+    this.information_extraction = results
+    console.log('results:', results);
     let markdown = '';
     
     Object.entries(results || {}).forEach(([category, items]) => {

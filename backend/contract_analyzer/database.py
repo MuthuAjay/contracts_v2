@@ -7,8 +7,8 @@ from functools import lru_cache
 import os
 import re
 from chromadb.utils import embedding_functions
-from backend.contract_analyzer.config import Config
-from backend.Doc_Processor.processors.text_pre_processor import process_agreement
+from contract_analyzer.config import Config
+from Doc_Processor.processors.text_pre_processor import process_agreement
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class VectorDB:
             documents = ["content: " + key + " \n " + str(value) for key, value in docs.items()]
             # adding documents to collection
             self.active_collection.add(
-                ids = list[docs.keys()],
+                ids = list(docs.keys()),
                 documents=documents,
             )
             

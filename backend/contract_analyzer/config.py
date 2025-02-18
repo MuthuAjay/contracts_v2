@@ -98,7 +98,7 @@ class Config:
 
     # Model management
     _current_model: Optional[ModelConfig] = None
-    _current_model_type: ModelType = ModelType.LLAMA_3_3
+    _current_model_type: ModelType = ModelType.LLAMA_3_1
     _model_instances: Dict[ModelType, Any] = {}
 
     # Processing configuration
@@ -222,6 +222,8 @@ class Config:
         """Create new model instance using Ollama"""
         from phi.model.ollama import Ollama
 
+        print(f"Creating model instance: {config.name}")
+        
         return Ollama(
             id=config.name.lower(),
             config={

@@ -309,13 +309,11 @@ def perform_information_extraction(content: str, agent_manager: AgentManager, co
         results = processor.export_results(format='json')
         
         # Get summary statistics
-        stats = processor.get_summary_stats()
         
         # Return formatted output
         return {
             "Information Extraction": {
                 "results": json.loads(results),  # Parse JSON string to dict
-                "statistics": stats,
                 "status": "success"
             }
         }
