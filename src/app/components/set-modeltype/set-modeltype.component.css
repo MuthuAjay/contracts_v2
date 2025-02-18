@@ -1,0 +1,87 @@
+.model-type-container {
+    padding: 1.5rem;
+  }
+  
+  h2 {
+    margin: 0 0 1.5rem;
+    color: #1976D2;
+    font-size: 1.25rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: white;
+    transition: border-color 0.2s;
+  }
+  
+  select:focus {
+    outline: none;
+    border-color: #1976D2;
+  }
+  
+  select.invalid {
+    border-color: #f44336;
+  }
+  
+  .form-actions {
+    margin-top: 1.5rem;
+  }
+  
+  button {
+    padding: 0.75rem 1.5rem;
+    background-color: #1976D2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  button:hover:not(:disabled) {
+    background-color: #1565C0;
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .success-message,
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+  }
+  
+  .success-message {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  .error-message {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+  
+  svg {
+    flex-shrink: 0;
+  }

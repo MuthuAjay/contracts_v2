@@ -1,0 +1,52 @@
+<div class="model-type-container">
+    <h2>Model Settings</h2>
+    
+    <form [formGroup]="modelTypeForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="modelType">Select Model Type:</label>
+        <select 
+          id="modelType" 
+          formControlName="modelType"
+          [class.invalid]="modelTypeControl?.invalid && modelTypeControl?.touched"
+        >
+          <option value="">Select a model</option>
+          <option *ngFor="let type of modelTypes" [value]="type">
+            {{type}}
+          </option>
+        </select>
+        
+        <div 
+          *ngIf="modelTypeControl?.invalid && modelTypeControl?.touched" 
+          class="error-message"
+        >
+          Please select a model type
+        </div>
+      </div>
+  
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          [disabled]="!modelTypeForm.valid || loading"
+        >
+          <span *ngIf="!loading">Set Model Type</span>
+          <span *ngIf="loading">Setting...</span>
+        </button>
+      </div>
+    </form>
+  
+    <div *ngIf="responseMessage" class="success-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+      {{ responseMessage }}
+    </div>
+  
+    <div *ngIf="errorMessage" class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12" y2="16"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+  </div>

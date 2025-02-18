@@ -7,6 +7,7 @@ import json
 import os
 from analyze import perform_analysis as analyze_func
 from process_document import process_document as process_func
+from contract_analyzer.config import Config, ModelType
 
 app = FastAPI()
 
@@ -24,6 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"]
 )
+
+class SetModelTypeRequest(BaseModel):
+    model_type: str
 
 # Request/Response Models
 class AnalysisRequest(BaseModel):
@@ -151,6 +155,24 @@ async def analyze_document(request: AnalysisRequest) -> Dict[str, Any]:
         raise HTTPException(
             status_code=500,
             detail=f"Analysis failed: {str(e)}"
+        )
+
+@app.post("/api/set_model_type")
+async def set_model_type(request: SetModelTypeRequest):
+    try:
+        model_type = ModelType[request.model_type.upper().replace(" ", "_")]
+        print(f"Setting model type to: {model_type}")
+        Config.set_model_type(model_type)
+        return {"detail": f"Model type set to {request.model_type}"}
+    except KeyError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid model type --- : {request.model_type}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set model type: {str(e)}"
         )
 
 # Error handler for generic exceptions

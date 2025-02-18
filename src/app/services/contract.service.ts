@@ -86,6 +86,16 @@ export class ContractService {
     );
   }
 
+    // Add this method to the ContractService class
+  setModelType(modelType: string): Observable<ModelTypeResponse> {
+    return this.http.post<ModelTypeResponse>(
+      `${this.apiUrl}/set_model_type`,
+      { model_type: modelType }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   private getUploadProgress(event: HttpEvent<UploadResponse>): UploadProgress {
     switch (event.type) {
       case HttpEventType.UploadProgress:
@@ -144,3 +154,9 @@ export class ContractService {
     return throwError(() => new Error(errorMessage));
   }
 }
+
+// Add this new interface
+export interface ModelTypeResponse {
+  detail: string;
+}
+

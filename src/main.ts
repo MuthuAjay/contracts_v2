@@ -6,15 +6,17 @@ import { CommonModule } from '@angular/common';
 import { FileUploadComponent } from './app/components/file-upload/file-upload.component';
 import { AnalysisFormComponent } from './app/components/analysis-form/analysis-form.component';
 import { AnalysisResultsComponent } from './app/components/analysis-results/analysis-results.component';
+import { SetModelTypeComponent } from './app/components/set-modeltype/set-modeltype.component'; // Import your component
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule, // <-- Added here
+    CommonModule,
     FileUploadComponent,
     AnalysisFormComponent,
-    AnalysisResultsComponent
+    AnalysisResultsComponent,
+    SetModelTypeComponent // Use it here
   ],
   template: `
     <div class="app-container">
@@ -45,6 +47,10 @@ import { AnalysisResultsComponent } from './app/components/analysis-results/anal
             [error]="error"
             [results]="results">
           </app-analysis-results>
+        </div>
+
+        <div class="card">
+          <app-set-modeltype></app-set-modeltype>
         </div>
       </main>
     </div>
@@ -104,27 +110,23 @@ export class App {
   error?: string;
   results?: any;
 
-  onDocumentProcessed(event: {content: string, collectionName: string}) {
-    console.log('Document processed:', event);
+  onDocumentProcessed(event: { content: string; collectionName: string }) {
     this.documentContent = event.content;
     this.collectionName = event.collectionName;
   }
 
   onAnalysisStarted() {
-    console.log('Analysis started');
     this.analyzing = true;
     this.error = undefined;
     this.results = undefined;
   }
 
   onAnalysisCompleted(results: any) {
-    console.log('Analysis completed:', results);
     this.analyzing = false;
     this.results = results;
   }
 
   onAnalysisError(error: string) {
-    console.error('Analysis error:', error);
     this.analyzing = false;
     this.error = error;
     this.results = undefined;
