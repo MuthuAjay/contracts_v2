@@ -60,6 +60,8 @@ def perform_contract_review(
         
         result = agent.run(analysis_prompt)
         
+        print("Completed Comprehensive Analysis")
+        
         # logger.info(f"Contract Review Result: {result.content}")
 
         extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(initial_content)
@@ -69,6 +71,8 @@ def perform_contract_review(
         extarct_key_prompt = ContractAnalystTemplate.extract_key_terms(content)
 
         key_terms = agent.run(extarct_key_prompt)
+        
+        print("Completed Key Term Extraction")
 
         analyze_obg_prompt = ContractAnalystTemplate.analyze_obligations(initial_content)
 
@@ -78,6 +82,8 @@ def perform_contract_review(
 
         obligations = agent.run(analyze_obg_prompt)
 
+        print("Completed Obligations Analysis")
+        
         party_extract_prompt = ContractAnalystTemplate.create_party_extraction_prompt(
             initial_content
         )
@@ -89,6 +95,8 @@ def perform_contract_review(
         )
 
         parties = agent.run(party_extract_prompt)
+        
+        print("Completed Parties Extraction")
         
         # logger.info(f"Key Terms: {key_terms.content}")
         
